@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Analyseur de l'Oracle - λύω</title>
+    <style>
+        :root {
+            --primary: #1a2a3a;
+            --accent: #8e44ad;
+            --gold: #f1c40f;
+            --bg: #f4f6f9;
+            --card-bg: #ffffff;
+            --success: #27ae60;
+            --danger: #c0392b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            padding: 25px;
+            border: 2px solid var(--accent);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--accent);
+            margin: 0 0 5px 0;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            background: #f0e6f6;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .oracle-card {
+            background: linear-gradient(135deg, #2c3e50, #4a235a);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .greek-word {
+            font-size: 2.8em;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            font-size: 0.85em;
+            color: #555;
+            text-transform: uppercase;
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-submit {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #703688;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        .feedback.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <header>
+        <h1>L'Analyseur de l'Oracle</h1>
+        <div class="subtitle">Identifie précisément les 4 caractéristiques de la forme verbale</div>
+    </header>
+
+    <!-- ÉCRAN D'ACCUEIL -->
+    <div id="start-screen" class="screen active">
+        <div class="input-group">
+            <label for="player-name">Prénom et Nom de l'élève :</label>
+            <input type="text" id="player-name" placeholder="Ex: Marie Cowé" required>
+        </div>
+        <button class="btn-action btn-submit" style="width: 100%;" onclick="validateAndStart()">Consulter l'Oracle</button>
+    </div>
+
+    <!-- ÉCRAN DE JEU -->
+    <div id="game-screen" class="screen">
+        <div class="score-board">
+            <span>Score : <span id="score">0</span> / 200</span>
+            <span>Erreurs : <span id="errors">0</span></span>
+            <span>Forme : <span id="q-num">1</span> / 20</span>
+        </div>
+
+        <div class="oracle-card">
+            <div class="greek-word" id="greek-form">--</div>
+        </div>
+
+        <div class="analysis-grid">
+            <div class="form-group">
+                <label for="select-tense">Temps</label>
+                <select id="select-tense">
+                    <option value="">-- Choisir --</option>
+                    <option value="Présent">Présent</option>
+                    <option value="Imparfait">Imparfait</option>
+                    <option value="Futur">Futur</option>
+                    <option value="Aoriste">Aoriste</option>
+                    <option value="Parfait">Parfait</option>
+                    <option value="Plus-que-parfait">Plus-que-parfait</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="select-voice">Voix</label>
+                <select id="select-voice">
+                    <option value="">-- Choisir --</option>
+                    <option value="Active">Active</option>
+                    <option value="Moyenne">Moyenne</option>
+                    <option value="Passive">Passive</option>
+                    <option value="Moyenne / Passive">Moyenne / Passive</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="select-mood">Mode</label>
+                <select id="select-mood">
+                    <option value="">-- Choisir --</option>
+                    <option value="Indicatif">Indicatif</option>
+                    <option value="Subjonctif">Subjonctif</option>
+                    <option value="Optatif">Optatif</option>
+                    <option value="Impératif">Impératif</option>
+                    <option value="Infinitif">Infinitif</option>
+                    <option value="Participe">Participe</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="select-person">Personne / Forme</label>
+                <select id="select-person">
+                    <option value="">-- Choisir --</option>
+                    <option value="1er sg">1re p. singulier</option>
+                    <option value="2e sg">2e p. singulier</option>
+                    <option value="3e sg">3e p. singulier</option>
+                    <option value="1re pl">1re p. pluriel</option>
+                    <option value="2e pl">2e p. pluriel</option>
+                    <option value="3e pl">3e p. pluriel</option>
+                    <option value="Invariable">Invariable (Infinitif)</option>
+                    <option value="Déclinable">Déclinable (Participe)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-action btn-submit" onclick="checkAnalysis()">Interpréter la forme</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+    </div>
+
+    <!-- ÉCRAN DE FIN -->
+    <div id="end-screen" class="screen" style="text-align: center;">
+        <h2>Épreuve terminée !</h2>
+        <p class="subtitle">L'Oracle a révélé tous ses secrets.</p>
+        <p id="final-stats" style="font-size: 1.2em; font-weight: bold; margin: 15px 0;">Score final : 0 / 200</p>
+        <div id="status-msg" class="status-msg">Envoi des résultats en cours...</div>
+        <br>
+        <button class="btn-action btn-submit" style="max-width:200px; margin:0 auto;" onclick="location.reload()">Recommencer</button>
+    </div>
+</div>
+
+<script>
+    // CONFIGURATION GOOGLE FORMS
+    const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe7jZ2OlKGtvoF6FvobemCOIUH0CBXBtmI19Lvg_ZYfyv7CmA/formResponse";
+    const ENTRY_NAME = "entry.1408458281";  // ID Nom
+    const ENTRY_SCORE = "entry.925624455";   // ID Score
+    const ENTRY_ERRORS = "entry.735837656";  // ID Erreurs
+
+    // 20 formes grammaticales variées du verbe luw
+    const dataset = [
+        { word: "λύομεν", tense: "Présent", voice: "Active", mood: "Indicatif", person: "1re pl" },
+        { word: "ἔλυες", tense: "Imparfait", voice: "Active", mood: "Indicatif", person: "2e sg" },
+        { word: "λύσει", tense: "Futur", voice: "Active", mood: "Indicatif", person: "3e sg" },
+        { word: "ἐλύσαμεν", tense: "Aoriste", voice: "Active", mood: "Indicatif", person: "1re pl" },
+        { word: "λέλυκα", tense: "Parfait", voice: "Active", mood: "Indicatif", person: "1er sg" },
+        { word: "ἐλελύκεσαν", tense: "Plus-que-parfait", voice: "Active", mood: "Indicatif", person: "3e pl" },
+        { word: "λύομαι", tense: "Présent", voice: "Moyenne / Passive", mood: "Indicatif", person: "1er sg" },
+        { word: "ἐλύοντο", tense: "Imparfait", voice: "Moyenne / Passive", mood: "Indicatif", person: "3e pl" },
+        { word: "λύσῃ", tense: "Aoriste", voice: "Moyenne", mood: "Subjonctif", person: "2e sg" },
+        { word: "ἐλύθην", tense: "Aoriste", voice: "Passive", mood: "Indicatif", person: "1er sg" },
+        { word: "λύωμεν", tense: "Présent", voice: "Active", mood: "Subjonctif", person: "1re pl" },
+        { word: "λύσοιμι", tense: "Futur", voice: "Active", mood: "Optatif", person: "1er sg" },
+        { word: "λῦσον", tense: "Aoriste", voice: "Active", mood: "Impératif", person: "2e sg" },
+        { word: "λύειν", tense: "Présent", voice: "Active", mood: "Infinitif", person: "Invariable" },
+        { word: "λῦσαι", tense: "Aoriste", voice: "Active", mood: "Infinitif", person: "Invariable" },
+        { word: "λελυκέναι", tense: "Parfait", voice: "Active", mood: "Infinitif", person: "Invariable" },
+        { word: "λύων", tense: "Présent", voice: "Active", mood: "Participe", person: "Déclinable" },
+        { word: "λύσας", tense: "Aoriste", voice: "Active", mood: "Participe", person: "Déclinable" },
+        { word: "λέλυμαι", tense: "Parfait", voice: "Moyenne / Passive", mood: "Indicatif", person: "1er sg" },
+        { word: "λυθήσομαι", tense: "Futur", voice: "Passive", mood: "Indicatif", person: "1er sg" }
+    ];
+
+    let currentIndex = 0;
+    let score = 0;
+    let errors = 0;
+    let playerName = "";
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function validateAndStart() {
+        const input = document.getElementById('player-name');
+        if (!input.value.trim()) {
+            alert("Veuillez saisir votre nom.");
+            return;
+        }
+        playerName = input.value.trim();
+        showScreen('game-screen');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const item = dataset[currentIndex];
+        document.getElementById('greek-form').innerText = item.word;
+        document.getElementById('q-num').innerText = currentIndex + 1;
+        document.getElementById('feedback').className = 'feedback';
+        
+        // Réinitialiser les sélections
+        document.getElementById('select-tense').value = "";
+        document.getElementById('select-voice').value = "";
+        document.getElementById('select-mood').value = "";
+        document.getElementById('select-person').value = "";
+    }
+
+    function checkAnalysis() {
+        const item = dataset[currentIndex];
+        const tenseVal = document.getElementById('select-tense').value;
+        const voiceVal = document.getElementById('select-voice').value;
+        const moodVal = document.getElementById('select-mood').value;
+        const personVal = document.getElementById('select-person').value;
+
+        const feedback = document.getElementById('feedback');
+
+        if (!tenseVal || !voiceVal || !moodVal || !personVal) {
+            feedback.innerText = "Veuillez sélectionner une option dans chaque catégorie.";
+            feedback.className = "feedback error";
+            return;
+        }
+
+        if (tenseVal === item.tense && voiceVal === item.voice && moodVal === item.mood && personVal === item.person) {
+            score += 10;
+            document.getElementById('score').innerText = score;
+            feedback.innerText = "Excellente analyse ! Tout est exact.";
+            feedback.className = "feedback success";
+
+            setTimeout(() => {
+                currentIndex++;
+                if (currentIndex < dataset.length) {
+                    loadQuestion();
+                } else {
+                    endGame();
+                }
+            }, 1200);
+        } else {
+            errors++;
+            document.getElementById('errors').innerText = errors;
+            feedback.innerText = `Analyse incorrecte. Réessaie ! (Rappel : ${item.word})`;
+            feedback.className = "feedback error";
+        }
+    }
+
+    function endGame() {
+        showScreen('end-screen');
+        document.getElementById('final-stats').innerText = `Score final : ${score} / 200 (${errors} erreur${errors > 1 ? 's' : ''})`;
+        sendResultsToGoogleForms();
+    }
+
+    function sendResultsToGoogleForms() {
+        const statusEl = document.getElementById('status-msg');
+        statusEl.innerText = "Transmission des résultats à l'Oracle...";
+
+        const formData = new FormData();
+        formData.append(ENTRY_NAME, playerName);
+        formData.append(ENTRY_SCORE, score);
+        formData.append(ENTRY_ERRORS, errors);
+
+        fetch(FORM_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: formData
+        })
+        .then(() => {
+            statusEl.innerText = "✅ Résultats enregistrés avec succès !";
+            statusEl.style.color = "var(--success)";
+        })
+        .catch(() => {
+            statusEl.innerText = "⚠️ Erreur lors de l'envoi des résultats.";
+            statusEl.style.color = "var(--danger)";
+        });
+    }
+</script>
+</body>
+</html>
