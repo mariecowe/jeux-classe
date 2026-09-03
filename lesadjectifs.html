@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Match : Le Duel des Gladiateurs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Serif', serif;
+            background-color: #1a1614;
+            color: #f0e6d2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background: linear-gradient(145deg, #2a221e, #1c1613);
+            border: 3px solid #c5a059;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Cinzel', serif;
+            color: #c5a059;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .student-input-group {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .student-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            color: #c5a059;
+        }
+
+        .student-input-group input {
+            padding: 10px 15px;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            border: 2px solid #c5a059;
+            background-color: #120e0c;
+            color: #f0e6d2;
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .intro-text {
+            font-size: 1.1rem;
+            margin: 20px 0;
+            line-height: 1.6;
+            color: #d8c8b0;
+        }
+
+        .btn {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(180deg, #8c2d19, #5a1a0e);
+            color: #f0e6d2;
+            border: 2px solid #c5a059;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(180deg, #a6371f, #732213);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(197, 160, 89, 0.3);
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #120e0c;
+            border: 1px solid #c5a059;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .hud-item span {
+            color: #c5a059;
+            font-weight: bold;
+        }
+
+        .matching-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card {
+            background: #2c241f;
+            border: 2px solid #5a483a;
+            border-radius: 8px;
+            padding: 15px 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 65px;
+        }
+
+        .card:hover {
+            border-color: #c5a059;
+            background: #382e28;
+        }
+
+        .card.selected {
+            border-color: #3182ce;
+            background: #2b4c7e;
+            box-shadow: 0 0 10px rgba(49, 130, 206, 0.5);
+        }
+
+        .card.matched {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .card.wrong {
+            border-color: #e53e3e;
+            background: #742a2a;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .greek {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #ffffff;
+        }
+
+        .rank-title {
+            font-size: 1.8rem;
+            color: #c5a059;
+            margin: 15px 0;
+        }
+
+        .final-score {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .status-msg {
+            font-style: italic;
+            color: #27ae60;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- ÉCRAN D'ACCUEIL -->
+        <div id="start-screen" class="screen active">
+            <h1>Case Match</h1>
+            <h2>Le Duel des Gladiateurs</h2>
+            <p class="intro-text">
+                Entrez dans l'arène ! Reliez chaque forme grecque à sa traduction ou son analyse grammaticale.<br><br>
+                Surmontez les 3 épreuves : <strong>Adjectifs réguliers</strong>, <strong>Comparatifs</strong> et <strong>Superlatifs</strong>.
+            </p>
+            
+            <div class="student-input-group">
+                <label for="student-name">Inscris ton Nom et Prénom :</label>
+                <input type="text" id="student-name" placeholder="Ex: Jules César" required>
+            </div>
+
+            <button class="btn" onclick="startGame()">Commencer le Duel</button>
+        </div>
+
+        <!-- ÉCRAN DE JEU -->
+        <div id="game-screen" class="screen">
+            <div class="hud">
+                <div class="hud-item">Épreuve : <span id="level-num">1</span>/3</div>
+                <div class="hud-item">Temps : <span id="timer">40</span>s</div>
+                <div class="hud-item">Score : <span id="score">0</span></div>
+            </div>
+            <h3 id="level-title">Niveau 1 : Les Adjectifs Réguliers</h3>
+            
+            <div class="matching-grid">
+                <div class="column" id="left-column"></div>
+                <div class="column" id="right-column"></div>
+            </div>
+        </div>
+
+        <!-- ÉCRAN DE FIN -->
+        <div id="end-screen" class="screen">
+            <h1>Fin du Duel !</h1>
+            <div id="rank" class="rank-title">Tiro</div>
+            <p class="final-score" id="final-stats">Vous avez obtenu 0 points.</p>
+            <p id="status-msg" class="status-msg"></p>
+            <button class="btn" onclick="startGame()">Rejouer</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION DU SUIVI PROFESSEUR
+        const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScKpVw_QLtHQvAk808uY5F2GPKNAGawApYgFnmqeq4_dS5TZw/formResponse";
+        const ENTRY_NAME = "entry.1651430678";   // Question 1 : Nom et prénom
+        const ENTRY_GAME = "entry.1352109822";  // Question 2 : Nom du jeu
+        const ENTRY_SCORE = "entry.1113364158"; // Question 3 : Score
+
+        const levels = [
+            {
+                title: "Niveau 1 : Adjectifs Réguliers (1re / 2e déclinaisons)",
+                pairs: [
+                    { greek: "δίκαιος", match: "masculin nom. sing." },
+                    { greek: "σοφή", match: "féminin nom. sing." },
+                    { greek: "καλά", match: "neutre nom./acc. pluriel" },
+                    { greek: "δικαίου", match: "masc./neutre gén. sing." },
+                    { greek: "σοφαῖς", match: "féminin datif pluriel" }
+                ]
+            },
+            {
+                title: "Niveau 2 : Les Comparatifs (-τερος, -τέρα, -τερον)",
+                pairs: [
+                    { greek: "σοφώτερος", match: "plus sage (masculin)" },
+                    { greek: "δικαιοτέρα", match: "plus juste (féminin)" },
+                    { greek: "νεώτερον", match: "plus jeune (neutre)" },
+                    { greek: "σοφωτέρων", match: "des plus sages (gén. plur.)" },
+                    { greek: "δικαιοτέροις", match: "aux plus justes (dat. plur.)" }
+                ]
+            },
+            {
+                title: "Niveau 3 : Les Superlatifs (-τατος, -τάτη, -τατον)",
+                pairs: [
+                    { greek: "σοφώτατος", match: "le plus sage / très sage" },
+                    { greek: "δικαιοτάτη", match: "la plus juste" },
+                    { greek: "νεώτατον", match: "le plus jeune (neutre)" },
+                    { greek: "σοφωτάτους", match: "les plus sages (acc. plur.)" },
+                    { greek: "δικαιοτάταις", match: "aux plus justes (fem. dat.)" }
+                ]
+            }
+        ];
+
+        let studentName = "";
+        let currentLevel = 0;
+        let score = 0;
+        let timeLeft = 40;
+        let timerInterval = null;
+        let selectedLeft = null;
+        let selectedRight = null;
+        let matchedCount = 0;
+
+        function startGame() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            if (!nameInput) {
+                alert("Merci d'indiquer ton nom avant de commencer la partie !");
+                return;
+            }
+            studentName = nameInput;
+
+            currentLevel = 0;
+            score = 0;
+            showScreen('game-screen');
+            loadLevel();
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function loadLevel() {
+            const levelData = levels[currentLevel];
+            document.getElementById('level-num').textContent = currentLevel + 1;
+            document.getElementById('level-title').textContent = levelData.title;
+            document.getElementById('score').textContent = score;
+            
+            matchedCount = 0;
+            selectedLeft = null;
+            selectedRight = null;
+
+            timeLeft = 40;
+            document.getElementById('timer').textContent = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+
+            const leftItems = [...levelData.pairs].sort(() => Math.random() - 0.5);
+            const rightItems = [...levelData.pairs].sort(() => Math.random() - 0.5);
+
+            const leftCol = document.getElementById('left-column');
+            const rightCol = document.getElementById('right-column');
+
+            leftCol.innerHTML = '';
+            rightCol.innerHTML = '';
+
+            leftItems.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'card greek';
+                card.textContent = item.greek;
+                card.dataset.id = item.greek;
+                card.onclick = () => selectCard(card, 'left');
+                leftCol.appendChild(card);
+            });
+
+            rightItems.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.textContent = item.match;
+                const matchObj = levelData.pairs.find(p => p.match === item.match);
+                card.dataset.id = matchObj.greek;
+                card.onclick = () => selectCard(card, 'right');
+                rightCol.appendChild(card);
+            });
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            document.getElementById('timer').textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                nextLevel();
+            }
+        }
+
+        function selectCard(card, side) {
+            if (card.classList.contains('matched')) return;
+
+            if (side === 'left') {
+                if (selectedLeft) selectedLeft.classList.remove('selected');
+                selectedLeft = card;
+                selectedLeft.classList.add('selected');
+            } else {
+                if (selectedRight) selectedRight.classList.remove('selected');
+                selectedRight = card;
+                selectedRight.classList.add('selected');
+            }
+
+            if (selectedLeft && selectedRight) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const isCorrect = selectedLeft.dataset.id === selectedRight.dataset.id;
+
+            if (isCorrect) {
+                selectedLeft.classList.remove('selected');
+                selectedRight.classList.remove('selected');
+                selectedLeft.classList.add('matched');
+                selectedRight.classList.add('matched');
+                
+                score += 10 + timeLeft;
+                document.getElementById('score').textContent = score;
+
+                selectedLeft = null;
+                selectedRight = null;
+                matchedCount++;
+
+                if (matchedCount === levels[currentLevel].pairs.length) {
+                    clearInterval(timerInterval);
+                    setTimeout(nextLevel, 600);
+                }
+            } else {
+                const l = selectedLeft;
+                const r = selectedRight;
+                l.classList.add('wrong');
+                r.classList.add('wrong');
+
+                setTimeout(() => {
+                    l.classList.remove('wrong', 'selected');
+                    r.classList.remove('wrong', 'selected');
+                }, 400);
+
+                selectedLeft = null;
+                selectedRight = null;
+            }
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel < levels.length) {
+                loadLevel();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            showScreen('end-screen');
+
+            let rank = "Tiro (Gladiateur Novice)";
+            if (score > 200) rank = "Retiarius (Guerrier Aguerri)";
+            if (score > 300) rank = "Champion de l'Arène 🏛️";
+
+            document.getElementById('rank').textContent = rank;
+            document.getElementById('final-stats').textContent = `Félicitations ${studentName}, votre score total est de ${score} points.`;
+
+            envoyerResultat(studentName, "Case Match - Duel des Gladiateurs", `${score} pts (${rank})`);
+        }
+
+        function envoyerResultat(nom, jeu, resultat) {
+            const statusMsg = document.getElementById('status-msg');
+            statusMsg.textContent = "Transmission du score au professeur...";
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = GOOGLE_FORM_URL;
+            form.target = 'hidden_iframe';
+
+            const fields = {
+                [ENTRY_NAME]: nom,
+                [ENTRY_GAME]: jeu,
+                [ENTRY_SCORE]: resultat
+            };
+
+            for (const key in fields) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = fields[key];
+                form.appendChild(input);
+            }
+
+            let iframe = document.getElementById('hidden_iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.name = 'hidden_iframe';
+                iframe.id = 'hidden_iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            statusMsg.textContent = "✓ Score transmis avec succès au professeur !";
+        }
+    </script>
+</body>
+</html>
