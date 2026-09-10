@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identity Cards : Le Tri des 6 Familles de Pronoms</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Serif', serif;
+            background-color: #121820;
+            color: #f0e6d2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 950px;
+            background: linear-gradient(145deg, #1e2631, #141a22);
+            border: 2px solid #4a7c59;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: #68d391;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-family: 'Cinzel', serif;
+            color: #cbd5e0;
+            font-size: 1rem;
+            font-weight: normal;
+            margin-bottom: 15px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #68d391;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #4a7c59;
+            background: #0d1117;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .btn {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(180deg, #2f855a, #22543d);
+            color: #f0e6d2;
+            border: 2px solid #68d391;
+            padding: 12px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(180deg, #38a169, #276749);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(104, 211, 145, 0.3);
+        }
+
+        /* HUD */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            background-color: #0d1117;
+            border: 1px solid #4a7c59;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .hud span {
+            color: #68d391;
+            font-weight: bold;
+        }
+
+        /* Zone des cartes à trier */
+        .cards-deck {
+            min-height: 90px;
+            background: #0d1117;
+            border: 2px dashed #4a7c59;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: linear-gradient(145deg, #2b3748, #1a202c);
+            border: 2px solid #63b3ed;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.25rem;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .card:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+
+        .card.selected-touch {
+            border-color: #f6ad55;
+            box-shadow: 0 0 12px #f6ad55;
+        }
+
+        /* Zone des 6 Coffres */
+        .chests-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 650px) {
+            .chests-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .chest {
+            background: #1a202c;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            padding: 10px 8px;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .chest.drag-over {
+            background: #2d3748;
+            border-color: #68d391;
+        }
+
+        .chest-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: #cbd5e0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #4a5568;
+            padding-bottom: 4px;
+            width: 100%;
+        }
+
+        .chest-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .placed-card {
+            background: #276749;
+            border: 1px solid #68d391;
+            font-size: 0.9rem;
+            padding: 4px 6px;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        /* Animations d'erreur */
+        .chest.wrong {
+            animation: shake 0.3s ease-in-out;
+            border-color: #e53e3e;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .status-msg {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #cbd5e0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- ÉCRAN D'ACCUEIL -->
+        <div id="start-screen" class="screen active">
+            <h1>Identity Cards</h1>
+            <h2>Le Tri des 6 Familles de Pronoms & Déterminants</h2>
+            
+            <div class="input-group">
+                <label for="player-name">Prénom et Nom de l'élève :</label>
+                <input type="text" id="player-name" placeholder="Ex: Marie Cowé" required>
+            </div>
+
+            <button class="btn" onclick="validateAndStart()">Commencer le Tri</button>
+        </div>
+
+        <!-- ÉCRAN DE JEU -->
+        <div id="game-screen" class="screen">
+            <div class="hud">
+                <div>Cartes restantes : <span id="cards-left">0</span></div>
+                <div>Erreurs : <span id="errors-count">0</span></div>
+                <div>Score : <span id="score">0</span></div>
+            </div>
+
+            <div class="cards-deck" id="cards-deck"></div>
+
+            <div class="chests-grid">
+                <div class="chest" data-family="personnel" onclick="touchPlace('personnel')">
+                    <div class="chest-title">Personnels</div>
+                    <div class="chest-content"></div>
+                </div>
+                <div class="chest" data-family="demonstratif" onclick="touchPlace('demonstratif')">
+                    <div class="chest-title">Démonstratifs</div>
+                    <div class="chest-content"></div>
+                </div>
+                <div class="chest" data-family="possessif" onclick="touchPlace('possessif')">
+                    <div class="chest-title">Possessifs</div>
+                    <div class="chest-content"></div>
+                </div>
+                <div class="chest" data-family="relatif" onclick="touchPlace('relatif')">
+                    <div class="chest-title">Relatifs</div>
+                    <div class="chest-content"></div>
+                </div>
+                <div class="chest" data-family="reflechi" onclick="touchPlace('reflechi')">
+                    <div class="chest-title">Réfléchis</div>
+                    <div class="chest-content"></div>
+                </div>
+                <div class="chest" data-family="interrogatif_indefini" onclick="touchPlace('interrogatif_indefini')">
+                    <div class="chest-title">Interrogatifs / Indéfinis</div>
+                    <div class="chest-content"></div>
+                </div>
+            </div>
+
+            <div class="help-text">Astuce : Sur ordinateur, glissez-déposez la carte. Sur écran tactile, cliquez sur la carte puis sur le coffre !</div>
+        </div>
+
+        <!-- ÉCRAN DE FIN -->
+        <div id="end-screen" class="screen">
+            <h1>Tri Terminé !</h1>
+            <h2 id="final-rank" style="font-size: 1.4rem; color: #68d391; margin: 15px 0;">Grammaticus</h2>
+            <p id="final-stats" style="font-size: 1.1rem; margin-bottom: 20px;">Score final : 0 points.</p>
+            <div id="status-msg" class="status-msg">Envoi du résultat vers Google Forms...</div>
+            <br>
+            <button class="btn" onclick="startGame()">Rejouer</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION GOOGLE FORMS EXTRATE AUTOMATIQUEMENT DE VOTRE LIEN
+        const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSea65m_68reGqmzrcEnDzc-0WV6-1yp8ndXRTfOd0ADWWJADA/formResponse";
+        const ENTRY_NAME = "entry.496702069";   // ID pour le Nom de l'élève
+        const ENTRY_SCORE = "entry.464804823";  // ID pour le Score
+        const ENTRY_ERRORS = "entry.295013098"; // ID pour le nombre d'erreurs
+
+        const allCards = [
+            { word: "ἐγώ", translation: "je / moi", family: "personnel" },
+            { word: "σύ", translation: "tu / toi", family: "personnel" },
+            { word: "ἡμεῖς", translation: "nous", family: "personnel" },
+            { word: "ὑμεῖς", translation: "vous", family: "personnel" },
+            { word: "αὐτόν", translation: "le / lui", family: "personnel" },
+            { word: "οὗτος", translation: "ce / celui-ci", family: "demonstratif" },
+            { word: "ἐκεῖνος", translation: "ce / celui-là", family: "demonstratif" },
+            { word: "ὅδε", translation: "ce...-ci", family: "demonstratif" },
+            { word: "ταύτην", translation: "cette / celle-ci", family: "demonstratif" },
+            { word: "ἐμός", translation: "mon / le mien", family: "possessif" },
+            { word: "σός", translation: "ton / le tien", family: "possessif" },
+            { word: "ἡμέτερος", translation: "notre / le nôtre", family: "possessif" },
+            { word: "ὑμέτερος", translation: "votre / le vôtre", family: "possessif" },
+            { word: "ὅς", translation: "qui (masc.)", family: "relatif" },
+            { word: "ἥ", translation: "qui (fém.)", family: "relatif" },
+            { word: "ὅ", translation: "qui / que (neutre)", family: "relatif" },
+            { word: "ὧν", translation: "dont / desquels", family: "relatif" },
+            { word: "ἐμαυτοῦ", translation: "de moi-même", family: "reflechi" },
+            { word: "σεαυτόν", translation: "toi-même (acc.)", family: "reflechi" },
+            { word: "ἑαυτῷ", translation: "à lui-même", family: "reflechi" },
+            { word: "τίς ;", translation: "qui ? (interrogatif)", family: "interrogatif_indefini" },
+            { word: "τί ;", translation: "quoi ? / pourquoi ?", family: "interrogatif_indefini" },
+            { word: "τις", translation: "quelqu'un / un certain", family: "interrogatif_indefini" },
+            { word: "τι", translation: "quelque chose", family: "interrogatif_indefini" }
+        ];
+
+        let currentDeck = [];
+        let currentCard = null;
+        let score = 0;
+        let errors = 0;
+        let selectedForTouch = null;
+        let playerName = "";
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function validateAndStart() {
+            const input = document.getElementById('player-name');
+            if (!input.value.trim()) {
+                alert("Veuillez entrer votre nom avant de démarrer le jeu.");
+                return;
+            }
+            playerName = input.value.trim();
+            startGame();
+        }
+
+        function startGame() {
+            score = 0;
+            errors = 0;
+            currentDeck = [...allCards].sort(() => Math.random() - 0.5).slice(0, 15);
+            document.querySelectorAll('.chest-content').forEach(c => c.innerHTML = '');
+            showScreen('game-screen');
+            updateHUD();
+            nextCard();
+            setupDragAndDrop();
+        }
+
+        function updateHUD() {
+            document.getElementById('cards-left').textContent = currentDeck.length + (currentCard ? 1 : 0);
+            document.getElementById('errors-count').textContent = errors;
+            document.getElementById('score').textContent = score;
+        }
+
+        function nextCard() {
+            const deckContainer = document.getElementById('cards-deck');
+            deckContainer.innerHTML = '';
+            selectedForTouch = null;
+
+            if (currentDeck.length === 0) {
+                endGame();
+                return;
+            }
+
+            currentCard = currentDeck.pop();
+            updateHUD();
+
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.draggable = true;
+            cardEl.innerHTML = `${currentCard.word} <br><span style="font-size:0.85rem; font-weight:normal; color:#cbd5e0;">(${currentCard.translation})</span>`;
+            cardEl.dataset.family = currentCard.family;
+
+            cardEl.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', currentCard.family);
+                cardEl.classList.add('dragging');
+            });
+
+            cardEl.addEventListener('dragend', () => {
+                cardEl.classList.remove('dragging');
+            });
+
+            cardEl.addEventListener('click', () => {
+                if (selectedForTouch) {
+                    selectedForTouch.classList.remove('selected-touch');
+                    selectedForTouch = null;
+                } else {
+                    selectedForTouch = cardEl;
+                    cardEl.classList.add('selected-touch');
+                }
+            });
+
+            deckContainer.appendChild(cardEl);
+        }
+
+        function setupDragAndDrop() {
+            const chests = document.querySelectorAll('.chest');
+            chests.forEach(chest => {
+                chest.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    chest.classList.add('drag-over');
+                });
+
+                chest.addEventListener('dragleave', () => {
+                    chest.classList.remove('drag-over');
+                });
+
+                chest.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    chest.classList.remove('drag-over');
+                    const family = e.dataTransfer.getData('text/plain');
+                    validatePlacement(family, chest);
+                });
+            });
+        }
+
+        function touchPlace(targetFamily) {
+            if (!selectedForTouch) return;
+            const chest = document.querySelector(`.chest[data-family="${targetFamily}"]`);
+            validatePlacement(selectedForTouch.dataset.family, chest);
+        }
+
+        function validatePlacement(cardFamily, chestEl) {
+            const targetFamily = chestEl.dataset.family;
+
+            if (cardFamily === targetFamily) {
+                score += 10;
+                const placed = document.createElement('div');
+                placed.className = 'placed-card';
+                placed.textContent = currentCard.word;
+                chestEl.querySelector('.chest-content').appendChild(placed);
+                nextCard();
+            } else {
+                errors++;
+                score = Math.max(0, score - 5);
+                chestEl.classList.add('wrong');
+                setTimeout(() => chestEl.classList.remove('wrong'), 400);
+                updateHUD();
+            }
+        }
+
+        function endGame() {
+            showScreen('end-screen');
+            let rank = "Apprenti Scribe";
+            if (score >= 100) rank = "Maître des Pronoms 🏛️";
+            else if (score >= 60) rank = "Grammaticus Aguerri";
+
+            document.getElementById('final-rank').textContent = rank;
+            document.getElementById('final-stats').textContent = `Score total : ${score} points (${errors} erreur${errors > 1 ? 's' : ''}).`;
+
+            sendResultsToGoogleForms();
+        }
+
+        function sendResultsToGoogleForms() {
+            const statusEl = document.getElementById('status-msg');
+            statusEl.textContent = "Enregistrement de la note en cours...";
+
+            const formData = new FormData();
+            formData.append(ENTRY_NAME, playerName);
+            formData.append(ENTRY_SCORE, score);
+            formData.append(ENTRY_ERRORS, errors);
+
+            fetch(FORM_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: formData
+            })
+            .then(() => {
+                statusEl.textContent = "✅ Résultat enregistré avec succès dans Google Forms / Sheets !";
+                statusEl.style.color = "#68d391";
+            })
+            .catch(err => {
+                statusEl.textContent = "⚠️ Erreur lors de l'envoi des résultats.";
+                statusEl.style.color = "#e53e3e";
+            });
+        }
+    </script>
+</body>
+</html>
